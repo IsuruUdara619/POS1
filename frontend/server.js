@@ -21,6 +21,14 @@ app.use(express.static(path.join(__dirname, 'dist')));
 app.use('/api', createProxyMiddleware({
   target: BACKEND_URL,
   changeOrigin: true,
+  onError: (err, req, res) => {
+    console.error(`Proxy error: ${err.message}`);
+    if (err.code === 'ENOTFOUND') {
+      console.error(`Error: Could not resolve backend host '${BACKEND_URL}'.`);
+      console.error('Please ensure the BACKEND_URL environment variable is set correctly to your backend service URL.');
+    }
+    res.status(500).send('Proxy Error');
+  }
   // If the backend expects /api prefix (which it does based on backend/index.ts), 
   // we don't need pathRewrite to remove it.
   // But we might need to ensure the path is forwarded correctly.
