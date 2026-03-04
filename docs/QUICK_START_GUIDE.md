@@ -1,40 +1,30 @@
 # Heaven Bakers - Quick Start Guide
 
-Access your application at **http://heavenbaker.com/application** instead of localhost!
+Access your application at **http://localhost** or **http://heavenbaker.com/application** (if configured)!
 
 ## What You Have
 
 ✅ **Dockerized Application** - Backend, Frontend, and PostgreSQL in containers
-✅ **Nginx Reverse Proxy** - Clean URL routing on Windows
-✅ **Custom Domain** - Access via heavenbaker.com locally
+✅ **Node.js Frontend Server** - Efficient static file serving and API proxying
 ✅ **PostgreSQL Database** - Fully integrated and persistent
 
-## Setup Overview (3 Main Steps)
+## Setup Overview (2 Main Steps)
 
 ### 1️⃣ Install Docker Desktop
 - Download from: https://docs.docker.com/desktop/install/windows-install/
 - Install and restart your computer
 - Open Docker Desktop and ensure it's running
 
-### 2️⃣ Install & Configure Nginx
-- Download from: http://nginx.org/en/download.html
-- Extract to `C:\nginx`
-- Configure as per `NGINX_WINDOWS_SETUP.md`
-
-### 3️⃣ Start Everything
+### 2️⃣ Start Everything
 ```cmd
 # Start Docker containers
-cd C:\Users\dilan\OneDrive\Desktop\Heaven_bakers
+cd Heaven_bakers
 docker compose up -d
-
-# Start Nginx (from another terminal)
-cd C:\nginx
-start nginx
 ```
 
 ## Access Your Application
 
-🌐 **Main URL:** http://heavenbaker.com/application
+🌐 **Main URL:** http://localhost:8080 or http://heavenbaker.com/application
 🔐 **Login:** admin / admin123 (default credentials)
 
 ## Project Structure
@@ -47,16 +37,14 @@ Heaven_bakers/
 │   └── .dockerignore    # Build optimization
 │
 ├── frontend/            # React/Vite application
-│   ├── Dockerfile       # Multi-stage build
-│   ├── nginx.conf       # Container nginx config
+│   ├── Dockerfile       # Multi-stage build (Node.js)
+│   ├── server.js        # Frontend server & proxy
 │   ├── src/            # React components
 │   └── .dockerignore   # Build optimization
 │
 ├── docker-compose.yml   # Orchestrates all services
-├── nginx-reverse-proxy.conf  # Windows nginx config
 │
 └── Documentation/
-    ├── NGINX_WINDOWS_SETUP.md    # Detailed nginx setup
     ├── DOCKER.md                  # Docker deployment guide
     └── README_DOCKER_SETUP.md     # Docker quick start
 ```
@@ -67,40 +55,21 @@ Heaven_bakers/
 Defines 3 services:
 - **postgres** (port 5432) - Database
 - **backend** (port 5000) - API server
-- **frontend** (port 8080) - Web application
-
-### nginx-reverse-proxy.conf
-Routes requests:
-- `heavenbaker.com/application` → Frontend (8080)
-- `heavenbaker.com/application/api/*` → Backend (5000)
-
-### Windows hosts file
-Maps domain to localhost:
-```
-127.0.0.1    heavenbaker.com
-```
+- **frontend** (port 8080) - Web application (Node.js server)
 
 ## Daily Operations
 
 ### Start Application
 ```cmd
-# Terminal 1: Start Docker
-cd C:\Users\dilan\OneDrive\Desktop\Heaven_bakers
+# Start Docker
+cd Heaven_bakers
 docker compose up -d
-
-# Terminal 2: Start Nginx
-cd C:\nginx
-start nginx
 ```
 
 ### Stop Application
 ```cmd
-# Stop Nginx
-cd C:\nginx
-nginx -s stop
-
 # Stop Docker
-cd C:\Users\dilan\OneDrive\Desktop\Heaven_bakers
+cd Heaven_bakers
 docker compose down
 ```
 
@@ -108,39 +77,19 @@ docker compose down
 ```cmd
 # Docker logs
 docker compose logs -f
-
-# Nginx logs
-cd C:\nginx\logs
-type error.log
-type access.log
 ```
 
 ### Restart Services
 ```cmd
 # Restart Docker containers
 docker compose restart
-
-# Reload Nginx config
-cd C:\nginx
-nginx -s reload
 ```
 
 ## Troubleshooting
 
 ### Application Not Loading
 1. Check Docker is running: `docker compose ps`
-2. Check Nginx is running: `tasklist | findstr nginx`
-3. Verify hosts file: `ping heavenbaker.com`
-4. Check logs for errors
-
-### Port Conflicts
-```cmd
-# Check what's using port 80
-netstat -ano | findstr :80
-
-# Stop IIS if needed
-iisreset /stop
-```
+2. Check logs for errors: `docker compose logs -f`
 
 ### Database Connection Issues
 ```cmd
@@ -150,11 +99,6 @@ docker compose exec postgres psql -U heaven_user -d Heaven_Bakers
 # View backend logs
 docker compose logs backend
 ```
-
-### 502 Bad Gateway
-- Ensure Docker containers are running
-- Restart Docker: `docker compose restart`
-- Check nginx config: `nginx -t`
 
 ## Environment Configuration
 
@@ -182,35 +126,37 @@ docker compose exec -T postgres psql -U heaven_user -d Heaven_Bakers < backup.sq
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        Windows Host                          │
-│                                                              │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │ Browser: http://heavenbaker.com/application          │  │
-│  └───────────────────────┬──────────────────────────────┘  │
+│                        Docker Host                          │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │ Browser: http://localhost:8080                       │   │
+│  └───────────────────────┬──────────────────────────────┘   │
 │                          │                                  │
-│  ┌───────────────────────▼──────────────────────────────┐  │
-│  │ Nginx Reverse Proxy (Port 80)                        │  │
-│  │ C:\nginx\                                            │  │
-│  └─────────┬────────────────────────────┬───────────────┘  │
-│            │                            │                   │
-│  ┌─────────▼──────────┐    ┌──────────▼────────────────┐  │
-│  │ Docker: Frontend   │    │ Docker: Backend          │  │
-│  │ Port 8080          │    │ Port 5000                │  │
-│  │ (React/Vite/Nginx) │◄───┤ (Node.js/Express)        │  │
-│  └────────────────────┘    └──────────┬────────────────┘  │
-│                                       │                    │
-│                            ┌──────────▼────────────────┐  │
-│                            │ Docker: PostgreSQL        │  │
-│                            │ Port 5432                 │  │
-│                            │ (Database)                │  │
-│                            └───────────────────────────┘  │
-│                                                            │
-│  ┌──────────────────────────────────────────────────────┐ │
-│  │ Persistent Volumes:                                  │ │
-│  │  • postgres_data - Database storage                  │ │
-│  │  • whatsapp_data - WhatsApp sessions                 │ │
-│  └──────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────┘
+│  ┌───────────────────────▼──────────────────────────────┐   │
+│  │ Docker: Frontend                                     │   │
+│  │ Port 8080                                            │   │
+│  │ (React/Vite/Node.js)                                 │   │
+│  │ Server + Proxy                                       │   │
+│  └───────────────────────┬──────────────────────────────┘   │
+│                          │ (Proxy /api)                     │
+│  ┌───────────────────────▼──────────────────────────────┐   │
+│  │ Docker: Backend                                      │   │
+│  │ Port 5000                                            │   │
+│  │ (Node.js/Express)                                    │   │
+│  └───────────────────────┬──────────────────────────────┘   │
+│                          │                                  │
+│  ┌───────────────────────▼──────────────────────────────┐   │
+│  │ Docker: PostgreSQL                                   │   │
+│  │ Port 5432                                            │   │
+│  │ (Database)                                           │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │ Persistent Volumes:                                  │   │
+│  │  • postgres_data - Database storage                  │   │
+│  │  • whatsapp_data - WhatsApp sessions                 │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## Next Steps After Setup
@@ -223,71 +169,10 @@ docker compose exec -T postgres psql -U heaven_user -d Heaven_Bakers < backup.sq
 
 ## Documentation Links
 
-- **Nginx Setup:** `NGINX_WINDOWS_SETUP.md` - Complete nginx installation guide
 - **Docker Guide:** `DOCKER.md` - Detailed Docker operations
 - **Docker Quick Start:** `README_DOCKER_SETUP.md` - Docker basics
 
 ## Support & Resources
 
-- **Nginx Docs:** http://nginx.org/en/docs/
 - **Docker Docs:** https://docs.docker.com/
 - **PostgreSQL Docs:** https://www.postgresql.org/docs/
-
-## Common Commands Reference
-
-```cmd
-# === DOCKER COMMANDS ===
-docker compose up -d              # Start all services
-docker compose down               # Stop all services
-docker compose ps                 # View running containers
-docker compose logs -f            # Follow logs
-docker compose restart            # Restart all services
-docker compose build              # Rebuild images
-
-# === NGINX COMMANDS ===
-cd C:\nginx
-start nginx                       # Start nginx
-nginx -s stop                     # Stop nginx
-nginx -s reload                   # Reload config
-nginx -t                          # Test config
-tasklist | findstr nginx          # Check if running
-
-# === SYSTEM COMMANDS ===
-ping heavenbaker.com              # Test domain resolution
-netstat -ano | findstr :80        # Check port 80 usage
-ipconfig /flushdns                # Clear DNS cache
-
-# === DATABASE COMMANDS ===
-docker compose exec postgres psql -U heaven_user -d Heaven_Bakers
-```
-
-## Production Deployment Notes
-
-When deploying to production:
-
-1. **Security:**
-   - Change all default passwords
-   - Use strong JWT_SECRET (32+ characters)
-   - Enable HTTPS with SSL certificates
-   - Update CORS settings
-
-2. **Performance:**
-   - Remove development volumes from docker-compose.yml
-   - Enable gzip compression
-   - Set up CDN for static assets
-   - Configure proper caching headers
-
-3. **Monitoring:**
-   - Set up log aggregation
-   - Configure health checks
-   - Monitor resource usage
-   - Set up alerts
-
-4. **Backup:**
-   - Automated daily database backups
-   - Configuration file backups
-   - Test restore procedures regularly
-
----
-
-**Ready to start?** Follow the setup steps above, then access your application at **http://heavenbaker.com/application** 🚀
