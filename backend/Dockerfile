@@ -6,10 +6,14 @@ RUN apk add --no-cache \
     python3 \
     make \
     g++ \
+    build-base \
+    pkgconf \
+    pixman-dev \
     cairo-dev \
     jpeg-dev \
     pango-dev \
     giflib-dev \
+    librsvg-dev \
     chromium \
     chromium-chromedriver \
     nss \
